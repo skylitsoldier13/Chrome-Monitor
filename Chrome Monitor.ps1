@@ -20,11 +20,7 @@ if ($PSScriptRoot){
 }else{
     $Script:BasePath = Split-Path -Parent -Path ([Environment]::GetCommandLineArgs()[0])
 }
-
-$AbsoluteRoot = Resolve-Path $Script:BasePath
-#$AbsoluteRoot
-
-
+Write-Host "$Script:BasePath"
 
         #-------------------------------------#
         # *~*~*~*~*~ Configuration *~*~*~*~*~ #
@@ -33,6 +29,9 @@ $AbsoluteRoot = Resolve-Path $Script:BasePath
 $Script:LogPath = Join-Path $Script:BasePath "Logs"
 $Script:DataPath = Join-Path $Script:BasePath "Data"
 $Script:FormPath = Join-Path $Script:BasePath "Forms"
+write-host "$Script:LogPath"
+write-host "$Script:DataPath"
+write-host "$Script:FormPath"
 
 $chromePaths = @(
     "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
@@ -176,7 +175,7 @@ $F_TMR_Refresh.Add_Tick({
 
 
 Register-ObjectEvent -InputObject $F_FSW_UpdateWatcher -EventName "Changed" -SourceIdentifier "UpdateWatcher" -Action{
-    $forcedloaded = Get-Content -Raw "C:\ProgramData\Chrome Monitor\Data\Saved.json" | ConvertFrom-Json
+    $forcedloaded = Get-Content -Raw $Script:SavePath | ConvertFrom-Json
     if($forcedloaded){
 
         $Script:SavedMemoryThreshold = @{
