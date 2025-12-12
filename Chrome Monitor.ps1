@@ -1,14 +1,34 @@
 #Chrome Monitor V2
+        #-------------------------------------#
+        # *~*~*~*~*~ Initial setup *~*~*~*~*~ #
+        #-------------------------------------#
+
 Clear-Host
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+$wshell = New-Object -ComObject wscript.shell
+
+$Script:RefreshTime = 300
+$Minutes = [System.Math]::Floor($Script:RefreshTime /60)
+$Seconds = $Script:RefreshTime % 60
+$TimeDisplay = "{0:N0}:{1:N0}" -f ($Minutes).ToString().PadLeft(2, '0'), ($Seconds).ToString().PadLeft(2, '0')
+
 
 if ($PSScriptRoot){
     $Script:BasePath = $PSScriptRoot
 }else{
     $Script:BasePath = Split-Path -Parent -Path ([Environment]::GetCommandLineArgs()[0])
 }
+
+$AbsoluteRoot = Resolve-Path $Script:BasePath
+#$AbsoluteRoot
+
+
+
+        #-------------------------------------#
+        # *~*~*~*~*~ Configuration *~*~*~*~*~ #
+        #-------------------------------------#
 
 $Script:LogPath = Join-Path $Script:BasePath "Logs"
 $Script:DataPath = Join-Path $Script:BasePath "Data"
@@ -21,9 +41,9 @@ $chromePaths = @(
 
 $ChromeProfile = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default"
 
-$chromePath = $chromePaths | Where-Object {Test-Path $_} |Select-Object -First 1
+$dashboardUrl = "http://192.168.209.51/FTVP/ViewPoint.aspx?raml=01%20SHOPVIEW&area=/"
 
-$Script:MaxMemory
+
 
         #--------------------------------------------------#
         # *~*~*~*~*~ Save System Initialization *~*~*~*~*~ #
@@ -31,65 +51,46 @@ $Script:MaxMemory
 
 $Script:SavePath = "$Script:DataPath\Saved.json"
 
-
 if (Test-Path $Script:SavePath){
-    write-host "got save"
     $loaded = Get-Content -Raw $Script:SavePath | ConvertFrom-Json
 
     if($loaded){
-        write-Host "Data found $($loaded.Memory)"
-
         $Script:SavedMemoryThreshold = @{
             Attribute = $loaded.Attribute
             Memory = $loaded.Memory
         }
-    } else{
-        write-host "couldnt find data in the file"
-    }
-
+    } else{}
     $Script:MaxMemory = $Script:SavedMemoryThreshold.Memory
 
 } else {
     $Script:MaxMemory = 750
 }
 
-$dashboardUrl = "http://192.168.209.51/FTVP/ViewPoint.aspx?raml=01%20SHOPVIEW&area=/"
-
+        #----------------------------------------#
+        # *~*~*~*~*~ GUI Form Loading *~*~*~*~*~ #
+        #----------------------------------------#
 
 $F_Form = . (Join-Path $Script:FormPath "Chrome Monitor.Form.ps1")
 
 
 
+        #--------------------------------------------------#
+        # *~*~*~*~*~ Pre-loop startup *~*~*~*~*~ #
+        #--------------------------------------------------#
+
+
+
 $F_Form.Text = "Chrome Monitor - $env:COMPUTERNAME"
+
 $F_LBL_CurrentMaxMemory.Text = "$Script:MaxMemory MB"
 
+$chromePath = $chromePaths | Where-Object {Test-Path $_} |Select-Object -First 1
 
 
-$F_TMR_LoopTime.Add_Tick({
-    $Now = (get-date).ToString("yyyyMMdd HH-mm-ss")
-    $chromeProcesses = Get-Process chrome -ErrorAction SilentlyContinue
 
-    if (!$chromeProcesses){
-        $F_LBL_CurrentUsage.Text = "N/A"
-        SessionCleanup
-        OpenChrome
-        $FileName = "Chrome Not Running - $Now.txt"
-        New-Item -Path "$Script:LogPath\$FileName" -ItemType "File"
-    } else {
-        $totalMem = ($chromeProcesses | Measure-Object WorkingSet64 -Sum).Sum / 1MB
-        $CleanTotalMem = ($totalMem -split '\.' )[0]
-        $F_LBL_CurrentUsage.Text = "$CleanTotalMem MB"
-
-        if ($totalMem -gt $Script:MaxMemory) {
-            Stop-Process -Name chrome -Force
-            $FileName = "Chrome Out of Memory - $Now.txt"
-            New-Item -Path "$Script:LogPath\$FileName" -ItemType "File"
-            Add-Content -Path "$Script:LogPath\$FileName" -Value "Chrome is using too much memory ($([math]::Round($totalMem)) MB) \ $maxMemoryMB. Restarting..."
-            SessionCleanup 
-            OpenChrome
-        }
-    }
-})
+        #----------------------------------------#
+        # *~*~*~*~*~ Needed functions *~*~*~*~*~ #
+        #----------------------------------------#
 
 function SessionCleanup {
     $PastSessions = @(
@@ -128,8 +129,81 @@ function OpenChrome {
         }
 }
 
+        #---------------------------------#
+        # *~*~*~*~*~ Main loop *~*~*~*~*~ #
+        #---------------------------------#
+
+$F_TMR_LoopTime.Add_Tick({
+    $Now = (get-date).ToString("yyyyMMdd HH-mm-ss")
+    $chromeProcesses = Get-Process chrome -ErrorAction SilentlyContinue
+
+    if (!$chromeProcesses){
+        $F_LBL_CurrentUsage.Text = "N/A"
+        SessionCleanup
+        OpenChrome
+        $FileName = "Chrome Not Running - $Now.txt"
+        New-Item -Path "$Script:LogPath\$FileName" -ItemType "File"
+    } else {
+        $totalMem = ($chromeProcesses | Measure-Object WorkingSet64 -Sum).Sum / 1MB
+        $CleanTotalMem = ($totalMem -split '\.' )[0]
+        $F_LBL_CurrentUsage.Text = "$CleanTotalMem MB"
+
+        if ($totalMem -gt $Script:MaxMemory) {
+            Stop-Process -Name chrome -Force
+            $FileName = "Chrome Out of Memory - $Now.txt"
+            New-Item -Path "$Script:LogPath\$FileName" -ItemType "File"
+            Add-Content -Path "$Script:LogPath\$FileName" -Value "Chrome is using too much memory ($([math]::Round($totalMem)) MB) \ $maxMemoryMB. Restarting..."
+            SessionCleanup 
+            OpenChrome
+        }
+    }
+})
+
+#$StopWatch = [System.Diagnostics.Stopwatch]::StartNew()
+
+$F_TMR_Refresh.Add_Tick({
+    $Minutes = [System.Math]::Floor($Script:RefreshTime /60)
+    $Seconds = $Script:RefreshTime % 60
+    $TimeDisplay = "{0:N0}:{1:N0}" -f ($Minutes).ToString().PadLeft(2, '0'), ($Seconds).ToString().PadLeft(2, '0')
+    $Script:RefreshTime--
+    $F_LBL_TimeUntil.Text = $TimeDisplay
+    if($Script:RefreshTime -eq 0){
+        $wshell.SendKeys('{F5}')
+        $Script:RefreshTime = 300
+    }
+})
 
 
+
+Register-ObjectEvent -InputObject $F_FSW_UpdateWatcher -EventName "Changed" -SourceIdentifier "UpdateWatcher" -Action{
+    $forcedloaded = Get-Content -Raw "C:\ProgramData\Chrome Monitor\Data\Saved.json" | ConvertFrom-Json
+    if($forcedloaded){
+
+        $Script:SavedMemoryThreshold = @{
+                Attribute = $forcedloaded.Attribute
+                Memory = $forcedloaded.Memory
+        }
+    } else{}
+
+    $Script:MaxMemory = $Script:SavedMemoryThreshold.Memory
+    $F_LBL_CurrentMaxMemory.Text = $Script:MaxMemory
+} | Out-Null
+
+
+        #------------------------------------#
+        # *~*~*~*~*~ Form display *~*~*~*~*~ #
+        #------------------------------------#
 $F_Form.ShowDialog() | Out-Null
 
+
+
+        #-------------------------------------#
+        # *~*~*~*~*~ Timer cleanup *~*~*~*~*~ #
+        #-------------------------------------#
+
 $F_TMR_LoopTime.Dispose()
+$F_TMR_Refresh.Dispose()
+$EventSourceID = "UpdateWatcher"
+Unregister-Event -SourceIdentifier $EventSourceId -ErrorAction SilentlyContinue
+Get-Job | Where-Object {$_.Name -eq $EventSourceId} | Remove-Job -Force -ErrorAction SilentlyContinue
+$F_FSW_UpdateWatcher.Dispose()

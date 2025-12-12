@@ -9,6 +9,11 @@ $F_Form = New-Object -TypeName System.Windows.Forms.Form
 [System.Windows.Forms.ComboBox]$F_CB_SetMaxMemory = $null
 [System.Windows.Forms.Timer]$F_TMR_LoopTime = $null
 [System.ComponentModel.IContainer]$components = $null
+[System.IO.FileSystemWatcher]$F_FSW_UpdateWatcher = $null
+[System.Windows.Forms.Button]$F_BTN_TimeControl = $null
+[System.Windows.Forms.Label]$F_LBL_TimeUntil = $null
+[System.Windows.Forms.Label]$F_NVLBL_RefreshTimer = $null
+[System.Windows.Forms.Timer]$F_TMR_Refresh = $null
 function InitializeComponent
 {
 $components = (New-Object -TypeName System.ComponentModel.Container)
@@ -21,7 +26,13 @@ $FNI_LBL_ChangeMax = (New-Object -TypeName System.Windows.Forms.Label)
 $F_LBL_CurrentMaxMemory = (New-Object -TypeName System.Windows.Forms.Label)
 $F_CB_SetMaxMemory = (New-Object -TypeName System.Windows.Forms.ComboBox)
 $F_TMR_LoopTime = (New-Object -TypeName System.Windows.Forms.Timer -ArgumentList @($components))
+$F_FSW_UpdateWatcher = (New-Object -TypeName System.IO.FileSystemWatcher)
+$F_TMR_Refresh = (New-Object -TypeName System.Windows.Forms.Timer -ArgumentList @($components))
+$F_NVLBL_RefreshTimer = (New-Object -TypeName System.Windows.Forms.Label)
+$F_LBL_TimeUntil = (New-Object -TypeName System.Windows.Forms.Label)
+$F_BTN_TimeControl = (New-Object -TypeName System.Windows.Forms.Button)
 $Panel1.SuspendLayout()
+([System.ComponentModel.ISupportInitialize]$F_FSW_UpdateWatcher).BeginInit()
 $F_Form.SuspendLayout()
 #
 #FNI_LBL_MemorySettings
@@ -114,12 +125,61 @@ $F_CB_SetMaxMemory.Text = [System.String]'Set Memory Max'
 $F_TMR_LoopTime.Enabled = $true
 $F_TMR_LoopTime.Interval = [System.Int32]5000
 #
+#F_FSW_UpdateWatcher
+#
+$F_FSW_UpdateWatcher.EnableRaisingEvents = $true
+$F_FSW_UpdateWatcher.Filter = [System.String]'Saved.json'
+$F_FSW_UpdateWatcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite
+$F_FSW_UpdateWatcher.Path = [System.String]'D:\Git\Chrome-Monitor\Data'
+$F_FSW_UpdateWatcher.SynchronizingObject = $F_Form
+#
+#F_TMR_Refresh
+#
+$F_TMR_Refresh.Enabled = $true
+$F_TMR_Refresh.Interval = [System.Int32]1000
+#
+#F_NVLBL_RefreshTimer
+#
+$F_NVLBL_RefreshTimer.BackColor = [System.Drawing.Color]::Gainsboro
+$F_NVLBL_RefreshTimer.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D
+$F_NVLBL_RefreshTimer.Font = (New-Object -TypeName System.Drawing.Font -ArgumentList @([System.String]'Tahoma',[System.Single]8.25,[System.Drawing.FontStyle]::Bold,[System.Drawing.GraphicsUnit]::Point,([System.Byte][System.Byte]0)))
+$F_NVLBL_RefreshTimer.Location = (New-Object -TypeName System.Drawing.Point -ArgumentList @([System.Int32]161,[System.Int32]12))
+$F_NVLBL_RefreshTimer.Name = [System.String]'F_NVLBL_RefreshTimer'
+$F_NVLBL_RefreshTimer.Size = (New-Object -TypeName System.Drawing.Size -ArgumentList @([System.Int32]89,[System.Int32]19))
+$F_NVLBL_RefreshTimer.TabIndex = [System.Int32]3
+$F_NVLBL_RefreshTimer.Text = [System.String]'Refresh Timer'
+$F_NVLBL_RefreshTimer.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+#
+#F_LBL_TimeUntil
+#
+$F_LBL_TimeUntil.BackColor = [System.Drawing.SystemColors]::ControlLightLight
+$F_LBL_TimeUntil.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D
+$F_LBL_TimeUntil.Location = (New-Object -TypeName System.Drawing.Point -ArgumentList @([System.Int32]161,[System.Int32]31))
+$F_LBL_TimeUntil.Name = [System.String]'F_LBL_TimeUntil'
+$F_LBL_TimeUntil.Size = (New-Object -TypeName System.Drawing.Size -ArgumentList @([System.Int32]89,[System.Int32]17))
+$F_LBL_TimeUntil.TabIndex = [System.Int32]4
+$F_LBL_TimeUntil.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+#
+#F_BTN_TimeControl
+#
+$F_BTN_TimeControl.BackColor = [System.Drawing.Color]::LightCoral
+$F_BTN_TimeControl.Location = (New-Object -TypeName System.Drawing.Point -ArgumentList @([System.Int32]161,[System.Int32]62))
+$F_BTN_TimeControl.Name = [System.String]'F_BTN_TimeControl'
+$F_BTN_TimeControl.Size = (New-Object -TypeName System.Drawing.Size -ArgumentList @([System.Int32]89,[System.Int32]23))
+$F_BTN_TimeControl.TabIndex = [System.Int32]5
+$F_BTN_TimeControl.Text = [System.String]'Stop Timer'
+$F_BTN_TimeControl.UseVisualStyleBackColor = $false
+#
 #F_Form
 #
-$F_Form.ClientSize = (New-Object -TypeName System.Drawing.Size -ArgumentList @([System.Int32]562,[System.Int32]187))
+$F_Form.ClientSize = (New-Object -TypeName System.Drawing.Size -ArgumentList @([System.Int32]262,[System.Int32]187))
+$F_Form.Controls.Add($F_BTN_TimeControl)
+$F_Form.Controls.Add($F_LBL_TimeUntil)
+$F_Form.Controls.Add($F_NVLBL_RefreshTimer)
 $F_Form.Controls.Add($Panel1)
 $F_Form.Text = [System.String]'###'
 $Panel1.ResumeLayout($false)
+([System.ComponentModel.ISupportInitialize]$F_FSW_UpdateWatcher).EndInit()
 $F_Form.ResumeLayout($false)
 Add-Member -InputObject $F_Form -Name FNI_LBL_MemorySettings -Value $FNI_LBL_MemorySettings -MemberType NoteProperty
 Add-Member -InputObject $F_Form -Name FNI_LBL_CurrentSetting -Value $FNI_LBL_CurrentSetting -MemberType NoteProperty
@@ -131,5 +191,10 @@ Add-Member -InputObject $F_Form -Name F_LBL_CurrentMaxMemory -Value $F_LBL_Curre
 Add-Member -InputObject $F_Form -Name F_CB_SetMaxMemory -Value $F_CB_SetMaxMemory -MemberType NoteProperty
 Add-Member -InputObject $F_Form -Name F_TMR_LoopTime -Value $F_TMR_LoopTime -MemberType NoteProperty
 Add-Member -InputObject $F_Form -Name components -Value $components -MemberType NoteProperty
+Add-Member -InputObject $F_Form -Name F_FSW_UpdateWatcher -Value $F_FSW_UpdateWatcher -MemberType NoteProperty
+Add-Member -InputObject $F_Form -Name F_BTN_TimeControl -Value $F_BTN_TimeControl -MemberType NoteProperty
+Add-Member -InputObject $F_Form -Name F_LBL_TimeUntil -Value $F_LBL_TimeUntil -MemberType NoteProperty
+Add-Member -InputObject $F_Form -Name F_NVLBL_RefreshTimer -Value $F_NVLBL_RefreshTimer -MemberType NoteProperty
+Add-Member -InputObject $F_Form -Name F_TMR_Refresh -Value $F_TMR_Refresh -MemberType NoteProperty
 }
 . InitializeComponent
