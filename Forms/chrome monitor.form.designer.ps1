@@ -130,7 +130,6 @@ $F_TMR_LoopTime.Interval = [System.Int32]5000
 $F_FSW_UpdateWatcher.EnableRaisingEvents = $true
 $F_FSW_UpdateWatcher.Filter = [System.String]'Saved.json'
 $F_FSW_UpdateWatcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite
-$F_FSW_UpdateWatcher.Path = [System.String]'D:\Git\Chrome-Monitor\Data'
 $F_FSW_UpdateWatcher.SynchronizingObject = $F_Form
 #
 #F_TMR_Refresh

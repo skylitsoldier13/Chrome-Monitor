@@ -20,7 +20,6 @@ if ($PSScriptRoot){
 }else{
     $Script:BasePath = Split-Path -Parent -Path ([Environment]::GetCommandLineArgs()[0])
 }
-Write-Host "$Script:BasePath"
 
         #-------------------------------------#
         # *~*~*~*~*~ Configuration *~*~*~*~*~ #
@@ -29,9 +28,7 @@ Write-Host "$Script:BasePath"
 $Script:LogPath = Join-Path $Script:BasePath "Logs"
 $Script:DataPath = Join-Path $Script:BasePath "Data"
 $Script:FormPath = Join-Path $Script:BasePath "Forms"
-write-host "$Script:LogPath"
-write-host "$Script:DataPath"
-write-host "$Script:FormPath"
+
 
 $chromePaths = @(
     "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
@@ -77,7 +74,7 @@ $F_Form = . (Join-Path $Script:FormPath "Chrome Monitor.Form.ps1")
         # *~*~*~*~*~ Pre-loop startup *~*~*~*~*~ #
         #--------------------------------------------------#
 
-
+$F_FSW_UpdateWatcher.Path = $Script:DataPath
 
 $F_Form.Text = "Chrome Monitor - $env:COMPUTERNAME"
 
