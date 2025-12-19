@@ -41,6 +41,8 @@ $dashboardUrl = "http://192.168.209.51/FTVP/ViewPoint.aspx?raml=01%20SHOPVIEW&ar
 
 
 
+
+
         #--------------------------------------------------#
         # *~*~*~*~*~ Save System Initialization *~*~*~*~*~ #
         #--------------------------------------------------#
@@ -60,6 +62,14 @@ if (Test-Path $Script:SavePath){
 
 } else {
     $Script:MaxMemory = 750
+
+    $MemorySave = @{
+        Attribute = "Saved Memory Threshold"
+        Memory = $Script:MaxMemory
+    }
+
+    $MemorySave | ConvertTo-Json | Out-File $Script:SavePath -Encoding utf8
+    
 }
 
         #----------------------------------------#
@@ -107,7 +117,7 @@ function SessionCleanup {
 
 function OpenChrome {
 
-    Start-Process $chromePath "--start-fullscreen $dashboardUrl --noerrdialogs --disable-session-crashed-bubble --disable-infobars --no-first-run"
+    Start-Process $chromePath "--start-fullscreen $dashboardUrl --noerrdialogs --disable-session-crashed-bubble --disable-infobars --no-first-run --remote-debugging-port=9222 --user-data-dir=C:\ChromeTempData"
     Start-Sleep -Seconds 2
 
     Add-Type @"
@@ -170,20 +180,22 @@ $F_TMR_Refresh.Add_Tick({
 })
 
 
-
-Register-ObjectEvent -InputObject $F_FSW_UpdateWatcher -EventName "Changed" -SourceIdentifier "UpdateWatcher" -Action{
-    $forcedloaded = Get-Content -Raw $Script:SavePath | ConvertFrom-Json
-    if($forcedloaded){
-
-        $Script:SavedMemoryThreshold = @{
+$F_FSW_UpdateWatcher.SynchronizingObject = $F_Form
+$F_FSW_UpdateWatcher.Add_Changed({
+    Start-Sleep -Milliseconds 100
+    if (Test-Path $Script:SavePath) {
+        $forcedloaded = Get-Content -Raw $Script:SavePath | ConvertFrom-Json
+        if ($forcedloaded) {
+            $Script:SavedMemoryThreshold = @{
                 Attribute = $forcedloaded.Attribute
-                Memory = $forcedloaded.Memory
+                Memory    = $forcedloaded.Memory
+            }
+            $Script:MaxMemory = $Script:SavedMemoryThreshold.Memory
+            $F_LBL_CurrentMaxMemory.Text = $Script:MaxMemory
         }
-    } else{}
-
-    $Script:MaxMemory = $Script:SavedMemoryThreshold.Memory
-    $F_LBL_CurrentMaxMemory.Text = $Script:MaxMemory
-} | Out-Null
+    }
+})
+$F_FSW_UpdateWatcher.EnableRaisingEvents = $true
 
 
         #------------------------------------#
